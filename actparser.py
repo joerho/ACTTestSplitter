@@ -20,8 +20,8 @@ CONST_READING = '/Users/joerho/Desktop/pyPDF/Test Covers/reading.png'
 CONST_SCIENCE = '/Users/joerho/Desktop/pyPDF/Test Covers/science.png'
 
 
-def main(argv):
-	print("\n\nParsing command line arguments...")
+def actparse(argv):
+	print("\n\nParsing arguments...")
 	parsedArgv = checkArgv(argv)
 	print(parsedArgv)
 
@@ -226,5 +226,5 @@ def addWaterMark(origCover, key):
 
 	return origCover
 
-if __name__ == '__main__':
-	main(sys.argv[1:])
+# if __name__ == '__main__':
+# 	main(sys.argv[1:])

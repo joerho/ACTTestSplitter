@@ -1,0 +1,31 @@
+quick outline of ACT program goals:
+	Take in an act test and organize it in such a way that each combination of sections is outputted.
+	Slap a cover page with the correct test number for each of the combination of sections.
+
+	Potential steps to take in order to complete (subject to change)
+		1.) convert each page in the pdf into individual images. Use png or jpg format.
+		2.) iterate through each page (having saved each file with page number as its file name)
+			a.) convert to gray scale or binary image
+			b.) use OCR to match the water mark in the header as 1,2,3, or 4
+			c.) group each section as soon as the water mark changes
+		3.) clean up the image folder
+		4.) create a new folder in the "Subject Separated" with the correct naming scheme (modus test number)
+			a.) put each combination of sections into the folder above
+			b.) create a new folder in this current folder named "Individual Sections"
+				1.) add each individual section into this folder
+
+
+subject tests
+Specify
+	number of tests
+	page ranges
+	test cover
+	test pdf
+	directory to save to
+
+act/sat
+Specify
+	page ranges
+	test cover
+	test pdf
+	directory

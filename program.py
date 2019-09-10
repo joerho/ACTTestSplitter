@@ -10,7 +10,8 @@ import re
 import itertools
 
 #python3 program.py test.pdf cover.pdf [page ranges]
-CONST_OUTDIR = '/Users/joerho/Desktop/pyPDF/ACT/Subject Separated'
+CONST_TESTPATH = '/Users/joerho/ModusDropBox/Dropbox/Modus Teachers (Shared)/1 ACT/ REAL ACT TESTS/Single File'
+CONST_OUTDIR = '/Users/joerho/ModusDropBox/Dropbox/Modus Teachers (Shared)/9 Joe/ACT/SubjectSeparated'
 CONST_NUM_SECTIONS = 4
 CONST_SECTION_MAP = {0:'E', 1:'M', 2:'R' , 3:'S'}
 CONST_ENGLISH = '/Users/joerho/Desktop/pyPDF/Test Covers/english.png'
@@ -20,20 +21,17 @@ CONST_SCIENCE = '/Users/joerho/Desktop/pyPDF/Test Covers/science.png'
 
 
 def main(argv):
-	print("Parsing command line arguments...")
+	print("\n\nParsing command line arguments...")
 	parsedArgv = checkArgv(argv)
 	print(parsedArgv)
-	print("\n\n")
 
-	testPath = parsedArgv[0]
+	testPath = os.path.join(CONST_TESTPATH, parsedArgv[0])
 	pageRanges = parsedArgv[1]
-	testNameNum = getTestName(parsedArgv[0])
+	testNameNum = getTestName(testPath)
 	outputDirs = prepareOutputDirectory(testNameNum[0])
-	print(outputDirs)
 
 	splitPages(testNameNum, testPath, pageRanges, outputDirs)
 	mixAndMatch(testNameNum, testPath, outputDirs)
-
 
 def splitPages(testNameNum, testPath, pageRanges, outputDirs):
 	temp = 1
@@ -53,77 +51,68 @@ def splitPages(testNameNum, testPath, pageRanges, outputDirs):
 		for page in range(temp, bookmark):
 			pdfWriter.addPage(pdf.getPage(page))
 
-		outputFileName = genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], key)
+		outputFileName = genSectionFilePath(outputDirs, testNameNum[1], testNameNum[0], key)
 		with open(outputFileName, 'wb') as out:
 			pdfWriter.write(out)
 		temp = bookmark
 		key += 1
 
-	
 	f.close()
 
-# def mixAndMatch(testNameNum, testPath, outputDirs):
-# 	eachSection = []
-# 	origCover = getOrigCover(testPath)
-
-# 	for key in range(0,CONST_NUM_SECTIONS):
-# 		section = genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], key)
-# 		with open(section, 'rb') as f:
-# 			pdf = PdfFileReader(f)
-# 			eachSection.append(pdf.pages[1:])
-# 	l = [0,1,2,3]
-# 	for L in range(2, len(l)):
-# 		for subset in itertools.combinations(l,L):
-# 			if len(subset) == 2:
-# 				outputFileName = os.path.join(outputDirs[0], '{} {} {}{}.pdf'
-# 				 .format(testNameNum[1], testNameNum[0], CONST_SECTION_MAP[subset[0]], 
-# 				 CONST_SECTION_MAP[subset[1]]))
-# 				print(eachSection)
-# 				pdfConcat(origCover, [eachSection[subset[0]], eachSection[subset[1]]], outputFileName)
 
 def mixAndMatch(testNameNum, testPath, outputDirs):
-	l = [0,1,2,3]
-	for L in range(2,len(l)):
-		for subset in itertools.combinations(l,L):
-			if len(subset) == 2:
-				eachSection = list()
-				outputFileName = os.path.join(outputDirs[0], '{} {} {}{}.pdf'
-				 .format(testNameNum[1], testNameNum[0], CONST_SECTION_MAP[subset[0]], 
-				 CONST_SECTION_MAP[subset[1]]))
-				eachSection.append(genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], subset[0]))
-				eachSection.append(genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], subset[1]))
-				pdfConcat(eachSection, outputFileName, testPath)
+	subsets = generateKeyCombo()
+	for subset in subsets:
+		eachSection = list()
+		size = len(subset)
 
-			if len(subset) == 3:
-				eachSection = list()
-				outputFileName = os.path.join(outputDirs[0], '{} {} {}{}{}.pdf'
-				 .format(testNameNum[1], testNameNum[0], CONST_SECTION_MAP[subset[0]], 
-				 CONST_SECTION_MAP[subset[1]], CONST_SECTION_MAP[subset[2]]))
-				eachSection.append(genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], subset[0]))
-				eachSection.append(genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], subset[1]))
-				eachSection.append(genSectionFilePath(outputDirs[1], testNameNum[1], testNameNum[0], subset[2]))
-				pdfConcat(eachSection, outputFileName, testPath)
+		if size == 2:
+			outputFileName = os.path.join(outputDirs, '{} {} {}{}.pdf'
+			 .format(testNameNum[1], testNameNum[0], CONST_SECTION_MAP[subset[0]], 
+			 CONST_SECTION_MAP[subset[1]]))
+			eachSection.append(genSectionFilePath(outputDirs, testNameNum[1], testNameNum[0], subset[0]))
+			eachSection.append(genSectionFilePath(outputDirs, testNameNum[1], testNameNum[0], subset[1]))
 
+		if size == 3:
+			outputFileName = os.path.join(outputDirs, '{} {} {}{}{}.pdf'
+			 .format(testNameNum[1], testNameNum[0], CONST_SECTION_MAP[subset[0]], 
+			 CONST_SECTION_MAP[subset[1]], CONST_SECTION_MAP[subset[2]]))
+			eachSection.append(genSectionFilePath(outputDirs, testNameNum[1], testNameNum[0], subset[0]))
+			eachSection.append(genSectionFilePath(outputDirs, testNameNum[1], testNameNum[0], subset[1]))
+			eachSection.append(genSectionFilePath(outputDirs, testNameNum[1], testNameNum[0], subset[2]))
+		
+		pdfConcat(eachSection, outputFileName, testPath)
 
+def generateKeyCombo():
+	keys = list()
+	subsets = list()
 
+	for i in range(0, CONST_NUM_SECTIONS):
+		keys.append(i)
+
+	for length in range(2, len(keys)):
+		for subset in itertools.combinations(keys, length):
+			subsets.append(subset)
+
+	return subsets
 
 def pdfConcat(inputFiles, outputFileName, testPath):
 	pdfWriter = PdfFileWriter()
-	# with open(testPath, 'rb') as f:
-	# 	pdf = PdfFileReader(f)
-	# 	pdfWriter.addPage(pdf.getPage(0))
+	temp = open(testPath, 'rb')
+	pdf = PdfFileReader(temp)
+	pdfWriter.addPage(pdf.getPage(0))
 
 	for filePath in inputFiles:
 		f = open(filePath , 'rb')
 		pdfReader = PdfFileReader(f)
 		
-		
 		for page in pdfReader.pages[1:]:
 			pdfWriter.addPage(page)
-	
 
 	with open(outputFileName, 'wb') as out:
 		pdfWriter.write(out)
+
+	temp.close()
 
 def addPages(pdfWriter, pdf):
 	for page in pdf:
@@ -141,14 +130,15 @@ def getOrigCover(testPath):
 
 
 def checkArgv(argv):
-	testPath = argv[0]
+	testName = argv[0]
 	pageRanges = argv[1]
+	testPath = os.path.join(CONST_TESTPATH, testName)
 
 	try:
 		t = open(testPath, 'rb')
 	except Exception as e:
 		print("The test pdf does not exist.")
-
+	
 	t.close()
 
 	pageArr = checkPageRanges(pageRanges)
@@ -210,11 +200,13 @@ def prepareOutputDirectory(testName):
 	if not os.path.exists(testDirPath):
 		os.makedirs(testDirPath)
 
-	individualPath = os.path.join(testDirPath, "Individual Sections")
-	if not os.path.exists(individualPath):
-		os.makedirs(individualPath)
+	return testDirPath
 
-	return [testDirPath, individualPath]
+	# individualPath = os.path.join(testDirPath, "Individual Sections")
+	# if not os.path.exists(individualPath):
+	# 	os.makedirs(individualPath)
+
+	# return [testDirPath, individualPath]
 
 def addWaterMark(origCover, key):
 	c = canvas.Canvas('watermark.pdf')
