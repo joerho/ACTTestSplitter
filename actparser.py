@@ -40,12 +40,19 @@ def actparse(argv):
 	test_path = os.path.join(CONST_TESTPATH, parsed_argv[0])
 	page_ranges = parsed_argv[1]
 	testnamenum = get_testnamenum(test_path)
-	output_dirs = prepare_output_dir(testnamenum[0])
+	output_dir = prepare_output_dir(testnamenum[0])
 
-	split_pages(testnamenum, test_path, page_ranges, output_dirs)
-	mix_match(testnamenum, test_path, output_dirs)
-
+	split_pages(testnamenum, test_path, page_ranges)
+	mix_match(testnamenum, test_path)
+	move_to_dropbox(output_dir)
 	remove_local_files()
+
+def move_to_dropbox(output_dir):
+	filelist = os.listdir(CONST_LOCAL)
+	for f in filelist:
+		local_filename = os.path.join(CONST_LOCAL, f)
+		output_filename = os.path.join(output_dir, f)
+		upload_dropbox(local_filename, output_filename)
 
 def remove_local_files():
 	filelist = os.listdir(CONST_LOCAL)
@@ -56,7 +63,7 @@ def upload_dropbox(local_filename, output_filename):
 	transferData = TransferData(CONST_ACCESS_TOKEN)
 	transferData.upload_file(local_filename, output_filename)
 
-def split_pages(testnamenum, test_path, page_ranges, output_dirs):
+def split_pages(testnamenum, test_path, page_ranges):
 	temp = 1
 	key = 0
 	for bookmark in page_ranges:
@@ -75,7 +82,7 @@ def split_pages(testnamenum, test_path, page_ranges, output_dirs):
 			pdf_writer.addPage(pdf.getPage(page))
 
 		local_filename = generate_section_filepath(CONST_LOCAL, testnamenum, key)
-		output_filename = generate_section_filepath(output_dirs, testnamenum, key)
+		# output_filename = generate_section_filepath(output_dirs, testnamenum, key)
 
 		with open(local_filename, 'wb') as out:
 			pdf_writer.write(out)
@@ -88,28 +95,33 @@ def split_pages(testnamenum, test_path, page_ranges, output_dirs):
 	f.close()
 
 
-def mix_match(testnamenum, test_path, output_dirs):
+def mix_match(testnamenum, test_path):
 	subsets = generate_keycombo()
 	for subset in subsets:
 		each_section = list()
 		size = len(subset)
 
 		if size == 2:
-			output_filename = os.path.join(output_dirs, '{} {} {}{}.pdf'
-				.format(testnamenum[1], testnamenum[0], CONST_SECTION_MAP[subset[0]], 
-			 	CONST_SECTION_MAP[subset[1]]))
+			new_filename = '{} {} {}{}.pdf'.format(
+				testnamenum[1], 
+				testnamenum[0], 
+				CONST_SECTION_MAP[subset[0]], 
+			 	CONST_SECTION_MAP[subset[1]])
 			each_section.append(generate_section_filepath(CONST_LOCAL, testnamenum, subset[0]))
 			each_section.append(generate_section_filepath(CONST_LOCAL, testnamenum, subset[1]))
 
 		if size == 3:
-			output_filename = os.path.join(output_dirs, '{} {} {}{}{}.pdf'
-				.format(testnamenum[1], testnamenum[0], CONST_SECTION_MAP[subset[0]], 
-				CONST_SECTION_MAP[subset[1]], CONST_SECTION_MAP[subset[2]]))
+			new_filename = '{} {} {}{}{}.pdf'.format(
+				testnamenum[1], 
+				testnamenum[0], 
+				CONST_SECTION_MAP[subset[0]], 
+				CONST_SECTION_MAP[subset[1]], 
+				CONST_SECTION_MAP[subset[2]])
 			each_section.append(generate_section_filepath(CONST_LOCAL, testnamenum, subset[0]))
 			each_section.append(generate_section_filepath(CONST_LOCAL, testnamenum, subset[1]))
 			each_section.append(generate_section_filepath(CONST_LOCAL, testnamenum, subset[2]))
 		
-		pdfConcat(each_section, output_filename, test_path)
+		pdfConcat(each_section, new_filename, test_path)
 
 def generate_keycombo():
 	keys = list()
@@ -124,7 +136,7 @@ def generate_keycombo():
 
 	return subsets
 
-def pdfConcat(each_section, output_filename, test_path):
+def pdfConcat(each_section, new_filename, test_path):
 	pdf_writer = PdfFileWriter()
 	temp = open(test_path, 'rb')
 	pdf = PdfFileReader(temp)
@@ -137,8 +149,7 @@ def pdfConcat(each_section, output_filename, test_path):
 		for page in pdf_reader.pages[1:]:
 			pdf_writer.addPage(page)
 
-	head, tail = os.path.split(output_filename)
-	local_filename = os.path.join(CONST_LOCAL, tail)
+	local_filename = os.path.join(CONST_LOCAL, new_filename)
 
 	with open(local_filename, 'wb') as out:
 		pdf_writer.write(out)
@@ -222,20 +233,9 @@ def get_testnamenum(test_path):
 	return arr
 
 def prepare_output_dir(test_name):
-	# if not os.path.exists(CONST_OUTDIR):
-	# 	os.makedirs(CONST_OUTDIR)
-
 	test_directory = os.path.join(CONST_OUTDIR, test_name)
-	# if not os.path.exists(test_directory):
-	# 	os.makedirs(test_directory)
 
 	return test_directory
-
-	# individualPath = os.path.join(test_directory, "Individual Sections")
-	# if not os.path.exists(individualPath):
-	# 	os.makedirs(individualPath)
-
-	# return [test_directory, individualPath]
 
 def add_watermark(orig_cover, key):
 	c = canvas.Canvas('watermark.pdf')
